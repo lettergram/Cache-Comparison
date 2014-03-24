@@ -1,4 +1,3 @@
-
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -40,7 +39,7 @@ double cache_opt(int ** matrix, long int size, int blocksize){
     for(int x = 0; x < size; x += blocksize){
         for(int i = x; i < x + blocksize; i++){
             for(int y = 0; y < size; y+= blocksize){
-                __builtin_prefetch(matrix[i][y + blocksize]);
+                __builtin_prefetch(&matrix[i][y + blocksize]);
                 for(int j = y; j < y + blocksize; j++){
                     matrix[i][j] = matrix[i][j] * 2;
                 }
@@ -91,6 +90,20 @@ double thrash_openmp(int ** matrix, long int size){
     #pragma omp parallel
     for(int x = 0; x < size; x++){
         for(int y = 0; y < size; y++){
+            matrix[y][x] = matrix[y][x] * 2;
+        }
+    }
+    double total_end = omp_get_wtime();
+    return double(total_end - total_begin);
+}
+
+double possible_thrash_openmp(int ** matrix, long int size){
+    
+    double total_begin = omp_get_wtime();
+    
+    #pragma omp parallel
+    for(int x = 0; x < size; x++){
+        for(int y = 0; y < size; y++){
             matrix[x][y] = matrix[x][y] * 2;
         }
     }
@@ -101,6 +114,7 @@ double thrash_openmp(int ** matrix, long int size){
 void cache(){
     
     long int size = 32768;
+    size = 2048;
     
     ofstream myfile;
     myfile.open("speed_comparison.txt");
@@ -136,6 +150,7 @@ void cache(){
         double avg_cache = 0;
         double avg_good_mp = 0;
         double avg_bad_mp = 0;
+        double avg_p_thrash_mp = 0;
         double avg_thrash_mp = 0;
         
         double num = 5.0;
@@ -147,6 +162,7 @@ void cache(){
             avg_bad_mp += bad_openmp_cache_opt(matrix, size, blocksize);
             avg_thrash_mp += thrash_openmp(matrix, size);
             avg_good_mp += good_openmp_cache_opt(matrix, size, blocksize);
+            avg_p_thrash_mp += possible_thrash_openmp(matrix, size);
         }
         
         cout << "\nmatrix size: " << size << " x " << size << endl;
@@ -154,11 +170,13 @@ void cache(){
         myfile << avg_bad_base / num << ",";
         myfile << avg_good_base / num << ",";
         myfile << avg_cache / num << ",";
-        myfile << avg_bad_mp / num << ",";
+        
+        myfile << avg_p_thrash_mp / num << ",";
         myfile << avg_thrash_mp / num << ",";
+        myfile << avg_bad_mp / num << ",";
         myfile << avg_good_mp / num << endl;
         
-        size = size << 1;
+        size = size >> 1;
         
     }
     
@@ -176,6 +194,7 @@ void openmp(){
     myfile << "Matrix Size,";
     myfile << "Poor OpenMP,";
     myfile << "Thrashing OpenMP,";
+    myfile << "'Possible' Thrashing OpenMP,";
     myfile << "Correct OpenMP" << endl;
     
     while(size > min){
@@ -199,19 +218,22 @@ void openmp(){
         double avg_good_mp = 0;
         double avg_bad_mp = 0;
         double avg_thrash_mp = 0;
+        double avg_p_thrash_mp = 0;
         
-        double num = 3.0;
+        double num = 5.0;
         
         for(int i = 0; i < num; i++){
             avg_bad_mp += bad_openmp_cache_opt(matrix, size, blocksize);
             avg_thrash_mp += thrash_openmp(matrix, size);
             avg_good_mp += good_openmp_cache_opt(matrix, size, blocksize);
+            avg_p_thrash_mp += possible_thrash_openmp(matrix, size);
         }
         
         cout << "\nmatrix size: " << size << " x " << size << endl;
         myfile << size << ",";
         myfile << avg_bad_mp / num << ",";
         myfile << avg_thrash_mp / num << ",";
+        myfile << avg_p_thrash_mp / num << ",";
         myfile << avg_good_mp / num << endl;
         
         size = size - min;
@@ -228,7 +250,6 @@ int main(){
     cache();
     
     openmp();
-        
     
     return 0;
     
