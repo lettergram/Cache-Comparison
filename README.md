@@ -9,4 +9,5 @@ The folder cl contains code examples for OpenCL.
 
 Programming languages used: C++ and C
 Libraries: OpenMP, OpenCL
+
 Compiler: g++-4.2 and Clang
