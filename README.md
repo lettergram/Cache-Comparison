@@ -8,6 +8,7 @@ This is a brief example of how cache optimization is important to both single an
 The folder cl contains code examples for OpenCL.
 
 Programming languages used: C++ and C
+
 Libraries: OpenMP, OpenCL
 
 Compiler: g++-4.2 and Clang
