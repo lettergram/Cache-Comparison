@@ -187,7 +187,6 @@ void openmp(){
   
   long int size = 32768;
   int min = 2048;
-  min = 32;
   
   ofstream myfile;
   myfile.open("mp_comparison.txt");
@@ -251,7 +250,7 @@ void openmp(){
 
 int main(){
   
-  //cache();
+  cache();
   
   openmp();
   
